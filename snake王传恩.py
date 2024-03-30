@@ -63,7 +63,7 @@ INIT_LENGTH = 5
 block_size = 20
 block_size_decimal = Decimal(str(block_size))
 #帧率
-snake_speed = 60
+fps = 60
 snake1_win_count = 0
 snake2_win_count = 0
 #游戏锁定
@@ -316,7 +316,7 @@ def fail_screen(snake1,snake2,button):
         
     
 #操作设置
-def handle_key(snake1,snake2,button,start_button,invinci_food):
+def handle_key(snake1,snake2,button,start_button):
     global snake1_win_count 
     global snake2_win_count
     global game_lock
@@ -328,12 +328,12 @@ def handle_key(snake1,snake2,button,start_button,invinci_food):
                 if event.type == INVINCIBLE_TIME:
                     snake1.is_invincibe = False
                     snake1.color = color1
-                    invinci_food.randomize_position()
+                    
             if snake2.is_invincibe is True:
                 if event.type == INVINCIBLE_TIME:
                     snake2.is_invincibe = False
                     snake2.color = color2
-                    invinci_food.randomize_position()
+                    
             #加护盾
             if snake1.is_shielded is True:    
                 if event.type == ADD_SHIELD:
@@ -452,7 +452,7 @@ def intro(start_button):
 # 主函数
 def main():
     
-    fps = pygame.time.Clock()
+    clock = pygame.time.Clock()
     #检测是不是ikun
     kun1,kun2=False,False
     if user1 == "ikun" or user1 == "kun":
@@ -460,8 +460,8 @@ def main():
     if user2 == "ikun" or user2 == "kun":
         kun2=True
     #设置游戏角色和道具
-    global full_width,is_fullscreen,block_size
-    
+    global full_width,is_fullscreen,block_size,fps
+    snake_speed = 100
     snake1 = Snake([((width-full_width)/2+(29*block_size),height/2)],color1,kun1)
     snake2 = Snake([((width-full_width)/2+(9*block_size),height/2)],color2,kun2)
     food1 = Food()
@@ -499,7 +499,7 @@ def main():
             game_lock = True
             intro(start_button)
         #控制时间
-        if pygame.time.get_ticks() - now > 100:
+        if pygame.time.get_ticks() - now > snake_speed:
             now = pygame.time.get_ticks()
             snake1.move()
             snake2.move()
@@ -517,9 +517,11 @@ def main():
         if snake1.get_head_position() == invinci_food.position and snake2.is_invincibe is False:
             snake1.invincible_time()
             snake1.color = GOLD
+            invinci_food.randomize_position()
         if snake2.get_head_position() == invinci_food.position and snake1.is_invincibe is False:
             snake2.invincible_time()
             snake2.color = GOLD
+            invinci_food.randomize_position()
         
         fail_screen(snake1,snake2,button)
         #绘制图形
@@ -530,7 +532,8 @@ def main():
         #等待5秒显示
         if snake1.is_invincibe is False and snake2.is_invincibe is False:
             invinci_food.draw(win)
-        handle_key(snake1, snake2, button,start_button,invinci_food)
+        #操作设置
+        handle_key(snake1, snake2, button,start_button)
         #道具特殊文本
         font = pygame.font.SysFont("simsun", 36,True,False)
         if snake1.shield_broke is True or snake2.shield_broke is True:
@@ -579,7 +582,7 @@ def main():
             game_lock = True
         #帧数        
         pygame.display.update()
-        fps.tick(snake_speed)
+        clock.tick(fps)
         
 if __name__ == '__main__':
     main()
