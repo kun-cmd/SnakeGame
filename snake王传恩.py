@@ -1,4 +1,5 @@
 import pygame
+import sys
 import random
 from decimal import Decimal
 #添加音频
@@ -63,6 +64,7 @@ INIT_LENGTH = 5
 block_size = 20
 block_size_decimal = Decimal(str(block_size))
 #帧率
+fps = 60
 snake1_win_count = 0
 snake2_win_count = 0
 #游戏锁定
@@ -322,6 +324,7 @@ def handle_key(snake1,snake2,button,start_button):
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                sys.exit()
             #无敌
             if snake1.is_invincibe is True:
                 if event.type == INVINCIBLE_TIME:
@@ -386,24 +389,24 @@ def handle_key(snake1,snake2,button,start_button):
                     button.handle_event(snake1, snake2)
                     start_button.handle_event(snake1, snake2)
             #操作设置
-            if game_lock is False:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        snake1.turn((0, -1))
-                    elif event.key == pygame.K_DOWN:
-                        snake1.turn((0, 1))
-                    elif event.key == pygame.K_LEFT:
-                        snake1.turn((-1, 0))
-                    elif event.key == pygame.K_RIGHT:
-                        snake1.turn((1, 0))
-                    if event.key == pygame.K_w:
-                        snake2.turn((0, -1))
-                    elif event.key == pygame.K_s:
-                        snake2.turn((0, 1))
-                    elif event.key == pygame.K_a:
-                        snake2.turn((-1, 0))
-                    elif event.key == pygame.K_d:
-                        snake2.turn((1, 0))
+            # if game_lock is False:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    snake1.turn((0, -1))
+                elif event.key == pygame.K_DOWN:
+                    snake1.turn((0, 1))
+                elif event.key == pygame.K_LEFT:
+                    snake1.turn((-1, 0))
+                elif event.key == pygame.K_RIGHT:
+                    snake1.turn((1, 0))
+                if event.key == pygame.K_w:
+                    snake2.turn((0, -1))
+                elif event.key == pygame.K_s:
+                    snake2.turn((0, 1))
+                elif event.key == pygame.K_a:
+                    snake2.turn((-1, 0))
+                elif event.key == pygame.K_d:
+                    snake2.turn((1, 0))
 def on_resize(snake1,snake2,food1,food2,invinc_food):
     global is_fullscreen,width,height,block_size,full_width,win,block_size_decimal
     for event in pygame.event.get(VIDEORESIZE):
@@ -459,7 +462,7 @@ def main():
     if user2 == "ikun" or user2 == "kun":
         kun2=True
     #设置游戏角色和道具
-    global full_width,is_fullscreen,block_size
+    global full_width,is_fullscreen,block_size,fps
     snake_speed = 100
     snake1 = Snake([((width-full_width)/2+(29*block_size),height/2)],color1,kun1)
     snake2 = Snake([((width-full_width)/2+(9*block_size),height/2)],color2,kun2)
@@ -479,7 +482,7 @@ def main():
     global now
     #停止介绍
     global stop_intro
-    now = pygame.time.get_ticks()-(snake_speed-1)
+    now = pygame.time.get_ticks()-101
     #添加bgm
     mixer.music.load('灰澈-森林-副本.mp3')
     mixer.music.play(-1)
@@ -534,6 +537,7 @@ def main():
         #操作设置
         handle_key(snake1, snake2, button,start_button)
         #道具特殊文本
+        pygame.font.init()
         font = pygame.font.SysFont("simsun", 36,True,False)
         if snake1.shield_broke is True or snake2.shield_broke is True:
             shield_text = font.render("把世界调成静音，聆听名刀破碎的声音", True, BLACK)
@@ -581,7 +585,7 @@ def main():
             game_lock = True
         #帧数        
         pygame.display.update()
-        clock.tick(60)
+        clock.tick(fps)
         
 if __name__ == '__main__':
     main()
