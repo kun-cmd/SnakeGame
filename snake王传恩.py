@@ -63,7 +63,6 @@ INIT_LENGTH = 5
 block_size = 20
 block_size_decimal = Decimal(str(block_size))
 #帧率
-fps = 60
 snake1_win_count = 0
 snake2_win_count = 0
 #游戏锁定
@@ -460,7 +459,7 @@ def main():
     if user2 == "ikun" or user2 == "kun":
         kun2=True
     #设置游戏角色和道具
-    global full_width,is_fullscreen,block_size,fps
+    global full_width,is_fullscreen,block_size
     snake_speed = 100
     snake1 = Snake([((width-full_width)/2+(29*block_size),height/2)],color1,kun1)
     snake2 = Snake([((width-full_width)/2+(9*block_size),height/2)],color2,kun2)
@@ -480,9 +479,9 @@ def main():
     global now
     #停止介绍
     global stop_intro
-    now = pygame.time.get_ticks()-101
+    now = pygame.time.get_ticks()-(snake_speed-1)
     #添加bgm
-    mixer.music.load('灰澈-森林-副本.ogg')
+    mixer.music.load('灰澈-森林-副本.mp3')
     mixer.music.play(-1)
     stop_intro = False
     if is_fullscreen:
@@ -582,7 +581,7 @@ def main():
             game_lock = True
         #帧数        
         pygame.display.update()
-        clock.tick(fps)
+        clock.tick(60)
         
 if __name__ == '__main__':
     main()
