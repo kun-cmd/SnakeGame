@@ -4,7 +4,7 @@ import sys
 import random
 from decimal import Decimal
 from pygame_gui.core import ObjectID
-from accelerator_snake import Acc_snake
+from accelerator_snake import *
 #添加音频
 from pygame.locals import *
 from pygame import mixer
@@ -399,6 +399,7 @@ def main():
     now1 = pygame.time.get_ticks()-101
     now2 = pygame.time.get_ticks()-101
     now3 = pygame.time.get_ticks()-101
+    global normal_speed
     normal_speed = 100
     #停止介绍
     
@@ -431,6 +432,7 @@ def main():
                                                    sprite=snake2,
                                                    percent_method=snake2.get_stamina_percentage,
                                                    object_id=ObjectID('#stamina_bar', '@player_status_bars'))
+    
     while True:
         time_delta = clock.tick(fps)/1000.0
         on_resize(snake1,snake2,food1,food2,invinci_food)
@@ -571,7 +573,11 @@ def main():
                     elif event.key == pygame.K_d:
                         snake2.turn((1, 0))
                     if event.key == pygame.K_SPACE:
-                        snake2.skill()
+                        snake2.skill(True)
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        snake2.skill(False)
+                        print(snake2.get_stamina_percentage())
             #按钮事件
             if game_lock:
                 
@@ -587,6 +593,8 @@ def main():
                     hello_button.hide()
                     
             manager.process_events(event)
+        #能量条
+        snake2.update_stamina(time_delta)
         manager.update(time_delta)
         manager.draw_ui(win)
         #道具特殊文本
