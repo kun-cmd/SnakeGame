@@ -1,7 +1,10 @@
 import pygame
+import pygame_gui
 import sys
 import random
 from decimal import Decimal
+from pygame_gui.core import ObjectID
+from accelerator_snake import Acc_snake
 #添加音频
 from pygame.locals import *
 from pygame import mixer
@@ -69,7 +72,7 @@ snake1_win_count = 0
 snake2_win_count = 0
 #游戏锁定
 # 蛇的类
-class Snake:
+class Snake(object):
     
     def __init__(self,positions,color,is_ikun=False):
         
@@ -80,7 +83,8 @@ class Snake:
         self.direction = (0,0)
         self.color = color
         self.score = 0
-        self.heart = 2
+        self.max_heart = 5
+        self.heart = 5
         self.shield = 0
         self.is_win = False
         self.is_fail = False
@@ -89,7 +93,10 @@ class Snake:
         self.shield_broke = False
         self.is_deduct = False
         self.is_ikun = is_ikun
+        self.speed = 100
         self.invincible_time()
+    def get_speed(self):
+        return self.speed
     def add_shield(self):
         self.is_shielded = True
         self.shield+=1
@@ -100,7 +107,8 @@ class Snake:
         self.heart+=1
         self.color = (0,255,0)
         pygame.time.set_timer(ADD_HP, 1000)
-
+    def  get_health_percentage(self) -> float:
+        return self.heart/self.max_heart
     def get_head_position(self):
         return self.positions[0]
 
@@ -157,6 +165,7 @@ class Snake:
     #无敌机制   
     def invincible_time(self):
         self.is_invincibe = True
+        
         pygame.time.set_timer(INVINCIBLE_TIME, 5000)
     #获取身体位置
     def get_body_positions(self):
@@ -178,7 +187,7 @@ class Snake:
         self.positions = positions
         self.direction = random.choice(self.directions)
         self.score = 0
-        self.heart=2
+        self.heart=5
         self.shield = 0
         self.is_HP = False
         self.is_shielded = False
@@ -214,41 +223,39 @@ class Snake:
             kun_img = pygame.transform.scale(kun_img, (block_size, block_size))
             surface.blit(kun_img, (head[0], head[1]))
 
-    
 #按钮类
-class Button:
-    def __init__(self,x,y,width,height,normal_color,hover_color,text,text_size=30) -> None:
-        self.rect = pygame.Rect(x,y,width,height)
-        self.normal_color = normal_color
-        self.hover_color = hover_color
-        self.text=text
-        self.text_size = text_size
-    def draw(self,surface):
+# class Button:
+#     def __init__(self,x,y,width,height,normal_color,hover_color,text,text_size=30) -> None:
+#         self.rect = pygame.Rect(x,y,width,height)
+#         self.normal_color = normal_color
+#         self.hover_color = hover_color
+#         self.text=text
+#         self.text_size = text_size
+#     def draw(self,surface):
         
-        color = self.normal_color
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
-            color = self.hover_color
-        pygame.draw.rect(surface,color,self.rect)
-        font = pygame.font.Font(None,self.text_size)
-        text = font.render(self.text,True,BLACK)
-        text_rect = text.get_rect(center = self.rect.center)
-        surface.blit(text,text_rect)
-    def handle_event(self,snake1,snake2):
-        global game_lock
-        global stop_intro
-        global block_size,block_size_decimal
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
-            stop_intro = True
-            game_lock = False
-            snake1.reset([((width-full_width)/2+float((Decimal(29)*block_size_decimal)),height/2)])
-            snake2.reset([((width-full_width)/2+float((Decimal(9)*block_size_decimal)),height/2)])
-            snake1.is_win = False
-            snake2.is_win = False
-            snake1.is_fail = False
-            snake2.is_fail = False
+#         color = self.normal_color
+#         if self.rect.collidepoint(pygame.mouse.get_pos()):
+#             color = self.hover_color
+#         pygame.draw.rect(surface,color,self.rect)
+#         font = pygame.font.Font(None,self.text_size)
+#         text = font.render(self.text,True,BLACK)
+#         text_rect = text.get_rect(center = self.rect.center)
+#         surface.blit(text,text_rect)
+#     def handle_event(self,snake1,snake2):
+#         global game_lock
+#         global stop_intro
+#         global block_size,block_size_decimal
+#         if self.rect.collidepoint(pygame.mouse.get_pos()):
+#             game_lock = False
+#             snake1.reset([((width-full_width)/2+float((Decimal(29)*block_size_decimal)),height/2)])
+#             snake2.reset([((width-full_width)/2+float((Decimal(9)*block_size_decimal)),height/2)])
+#             snake1.is_win = False
+#             snake2.is_win = False
+#             snake1.is_fail = False
+#             snake2.is_fail = False
             
 # 食物类
-class Food:
+class Food():
     def __init__(self,color=RED):
         self.position = (0, 0)
         self.color = color
@@ -289,7 +296,7 @@ def win_screen(snake,text,button):
     font = pygame.font.Font(None,50)
     score_text = font.render(f"Your Final Score is {snake.score}",True,BLACK)
     win.blit(score_text,(width/2-150,height/2+50)) 
-    button.draw(win)   
+    button.show()  
 #失败界面
 def fail_screen(snake1,snake2,button):
     font_big = pygame.font.Font(None, 100)
@@ -299,33 +306,188 @@ def fail_screen(snake1,snake2,button):
         win.blit(fail_text, (width/2-50, height/2-25))
         score_text = font_small.render(f"Your Final Score are {snake1.score} and {snake2.score}", True, BLACK)
         win.blit(score_text,(width/2-150,height/2+50))
-        button.draw(win)
+        button.show()
         
     elif snake1.is_fail is True:
         fail_text = font_big.render(f"{user1} Fail", True, BLACK)
         score_text = font_small.render(f"Your Final Score is {snake1.score}",True,BLACK)
         win.blit(fail_text, (width/2-175,height/2-25))
         win.blit(score_text, (width/2-150, height/2+50))
-        button.draw(win)
+        button.show()
         
     elif snake2.is_fail is True:
         fail_text = font_big.render(f"{user2} Fail", True, BLACK)
         score_text = font_small.render(f"Your Final Score is {snake2.score}",True,BLACK)
         win.blit(fail_text, (width/2-175,height/2-25))
         win.blit(score_text, (width/2-150, height/2+50))
-        button.draw(win)
+        button.show()
         
+#窗口改变大小
+def on_resize(snake1,snake2,food1,food2,invinc_food):
+    global is_fullscreen,width,height,block_size,full_width,win,block_size_decimal,draw_edge
+    for event in pygame.event.get(VIDEORESIZE):
+        width, height = event.size
+        full_width = height/3*4
+        if full_width == 800:
+            is_fullscreen = False 
+            full_block_size = Decimal(str(block_size))
+            block_size = height/3*4/40
+            block_size_decimal = Decimal(str(block_size))
+            snake1.modify_positions(block_size_decimal,full_block_size)
+            snake2.modify_positions(block_size_decimal,full_block_size)
+            food1.randomize_position()
+            food2.randomize_position()
+            invinc_food.randomize_position()
+            draw_edge = False
+        else:
+            is_fullscreen = True
+            norm_block_size = Decimal(str(block_size))
+            block_size = height/3*4/40
+            block_size_decimal = Decimal(str(block_size))
+            snake1.modify_positions(norm_block_size,block_size_decimal)
+            snake2.modify_positions(norm_block_size,block_size_decimal)
+            food1.randomize_position()
+            food2.randomize_position()
+            invinc_food.randomize_position()
+            draw_edge = True
+        win = pygame.display.set_mode((width, height), RESIZABLE)
+        pygame.event.post(event)
+#介绍 
+def intro():
+    font = pygame.font.SysFont("simsun", 36,False,False)
+    intro_text = font.render("Welcome to Snake Game", True, BLACK)
+    win.blit(intro_text, (width/2-175, 100))
+    rules_text1 = font.render("游戏规则: 每条蛇开局有五秒钟的无敌时间", True, BLACK)
+    win.blit(rules_text1, (width/2-350, 150))
+    rules_text2 = font.render("吃红色食物可以获得随机buff", True, BLACK)
+    win.blit(rules_text2, (width/2-200, 200))
+    rules_text3 = font.render("金色食物是无敌五秒，不可出界", True, BLACK)
+    win.blit(rules_text3, (width/2-225, 250))
+    rules_text4 = font.render("一条蛇蛇头触碰另一条蛇的身体会扣血", True, BLACK)
+    win.blit(rules_text4, (width/2-250, 300))
+    rules_text5 = font.render("吃到三个红色食物或将敌人血量扣光算赢", True, BLACK)
+    win.blit(rules_text5, (width/2-350, 350))
     
-#操作设置
-def handle_key(snake1,snake2,button,start_button):
+# 主函数
+def main():
+    
+    clock = pygame.time.Clock()
+    manager = pygame_gui.UIManager((width,height),'theme.json')
+    #检测是不是ikun
+    kun1,kun2=False,False
+    if user1 == "ikun" or user1 == "kun":
+        kun1=True
+    if user2 == "ikun" or user2 == "kun":
+        kun2=True
+    #设置游戏角色和道具
+    global full_width,is_fullscreen,block_size,fps
+    snake1 = Snake([((width-full_width)/2+(29*block_size),height/2)],color1,kun1)
+    snake2 = Acc_snake([((width-full_width)/2+(9*block_size),height/2)],color2,kun2)
+    food1 = Food()
+    food2 = Food()
+    invinci_food = Food(GOLD)
+    # button = Button(width/2-50,height/2+100,100,50,(169,169,169),(105,105,105),"Try Again")
+    # start_button = Button(width/2-50, height/2+100, 200, 50, (169,169,169), (105,105,105), "Press to Start")
+    # 设置游戏胜利条件
+    win_score = 6
+    #回合胜利数
     global snake1_win_count 
     global snake2_win_count
+    #游戏锁定
     global game_lock
-    for event in pygame.event.get():
+    #当前时间
+    now1 = pygame.time.get_ticks()-101
+    now2 = pygame.time.get_ticks()-101
+    now3 = pygame.time.get_ticks()-101
+    normal_speed = 100
+    #停止介绍
+    
+    global draw_edge
+    draw_edge = False
+    #添加bgm
+    mixer.music.load('灰澈-森林-副本.mp3')
+    mixer.music.play(-1)
+    stop_intro = False
+    if is_fullscreen:
+        food1.randomize_position()
+        food2.randomize_position()
+        invinci_food.randomize_position()
+    hello_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((width/2-50,height/2+100), (100, 50)),
+                                            text='Say Hello',
+                                            manager=manager#anchors={'center':'center'}
+                                            )
+    health_bar1 = pygame_gui.elements.UIStatusBar(pygame.Rect((80,47),(200,30)),
+                                                  manager,
+                                                  percent_method=snake2.get_health_percentage,
+                                                  object_id=ObjectID('#health_bar', '@player_status_bars')
+                                                  )
+    health_bar2 = pygame_gui.elements.UIStatusBar(pygame.Rect((-200,47),(200,30)),
+                                                  manager,
+                                                  percent_method=snake1.get_health_percentage,
+                                                  object_id=ObjectID('#health_bar', '@player_status_bars'),
+                                                  anchors={'right': 'right'})
+    stamina_bar2 = pygame_gui.elements.UIStatusBar(pygame.Rect((0,0),(50,6)),
+                                                   manager,
+                                                   sprite=snake2,
+                                                   percent_method=snake2.get_stamina_percentage,
+                                                   object_id=ObjectID('#stamina_bar', '@player_status_bars'))
+    while True:
+        time_delta = clock.tick(fps)/1000.0
+        on_resize(snake1,snake2,food1,food2,invinci_food)
+        
+        win.fill(WHITE)
+        if draw_edge:
+            pygame.draw.rect(win,BLACK,((width-full_width)/2,0,full_width,height),1)
+        if stop_intro is False:
+            game_lock = True
+            intro()
+        #控制时间
+        if pygame.time.get_ticks() - now1 > snake1.get_speed():
+            now1 = pygame.time.get_ticks()
+            snake1.move()
+            
+        if pygame.time.get_ticks() - now2 > snake2.get_speed():
+            now2 = pygame.time.get_ticks()
+            snake2.move()
+        if pygame.time.get_ticks() - now3 > normal_speed:
+            now3 = pygame.time.get_ticks()
+            #碰撞检测
+            snakes_hit(snake1, snake2)
+        #吃食物机制
+        if snake1.get_head_position() == food1.position:
+            snake1.eat(food1)
+        if snake1.get_head_position() == food2.position:
+            snake1.eat(food2)
+        if snake2.get_head_position() == food1.position:
+            snake2.eat(food1)
+        if snake2.get_head_position() == food2.position:
+            snake2.eat(food2)
+        if snake1.get_head_position() == invinci_food.position and snake2.is_invincibe is False:
+            snake1.invincible_time()
+            snake1.color = GOLD
+            invinci_food.randomize_position()
+        if snake2.get_head_position() == invinci_food.position and snake1.is_invincibe is False:
+            snake2.invincible_time()
+            snake2.color = GOLD
+            invinci_food.randomize_position()
+        
+        fail_screen(snake1,snake2,hello_button)
+        #绘制图形
+        snake1.draw(win)
+        snake2.draw(win)
+        food1.draw(win)
+        food2.draw(win)
+        #等待5秒显示
+        if snake1.is_invincibe is False and snake2.is_invincibe is False:
+            invinci_food.draw(win)
+        #操作设置
+        
+        for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             #无敌
+
             if snake1.is_invincibe is True:
                 if event.type == INVINCIBLE_TIME:
                     snake1.is_invincibe = False
@@ -373,169 +535,60 @@ def handle_key(snake1,snake2,button,start_button):
                     snake2.shield_broke = False
                     snake2.color = color2
             #按钮事件
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if game_lock:
-                    if snake1.is_win is True:
-                        snake1_win_count += 1
-                    if snake2.is_win is True:
-                        snake2_win_count += 1
-                    if snake1.is_fail is True and snake2.is_fail is True:
-                        snake1_win_count += 1
-                        snake2_win_count += 1
-                    elif snake1.is_fail is True:
-                        snake2_win_count +=1
-                    elif snake2.is_fail is True:
-                        snake1_win_count +=1
-                    button.handle_event(snake1, snake2)
-                    start_button.handle_event(snake1, snake2)
+            # if event.type == pygame.MOUSEBUTTONDOWN:
+            #     if game_lock:
+            #         if snake1.is_win is True:
+            #             snake1_win_count += 1
+            #         if snake2.is_win is True:
+            #             snake2_win_count += 1
+            #         if snake1.is_fail is True and snake2.is_fail is True:
+            #             snake1_win_count += 1
+            #             snake2_win_count += 1
+            #         elif snake1.is_fail is True:
+            #             snake2_win_count +=1
+            #         elif snake2.is_fail is True:
+            #             snake1_win_count +=1
+            #         button.handle_event(snake1, snake2)
+            #         start_button.handle_event(snake1, snake2)
             #操作设置
-            # if game_lock is False:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    snake1.turn((0, -1))
-                elif event.key == pygame.K_DOWN:
-                    snake1.turn((0, 1))
-                elif event.key == pygame.K_LEFT:
-                    snake1.turn((-1, 0))
-                elif event.key == pygame.K_RIGHT:
-                    snake1.turn((1, 0))
-                if event.key == pygame.K_w:
-                    snake2.turn((0, -1))
-                elif event.key == pygame.K_s:
-                    snake2.turn((0, 1))
-                elif event.key == pygame.K_a:
-                    snake2.turn((-1, 0))
-                elif event.key == pygame.K_d:
-                    snake2.turn((1, 0))
-def on_resize(snake1,snake2,food1,food2,invinc_food):
-    global is_fullscreen,width,height,block_size,full_width,win,block_size_decimal
-    for event in pygame.event.get(VIDEORESIZE):
-        width, height = event.size
-        full_width = height/3*4
-        if full_width == 800:
-            is_fullscreen = False 
-            full_block_size = Decimal(str(block_size))
-            block_size = height/3*4/40
-            block_size_decimal = Decimal(str(block_size))
-            snake1.modify_positions(block_size_decimal,full_block_size)
-            snake2.modify_positions(block_size_decimal,full_block_size)
-            food1.randomize_position()
-            food2.randomize_position()
-            invinc_food.randomize_position()
-        else:
-            is_fullscreen = True
-            norm_block_size = Decimal(str(block_size))
-            block_size = height/3*4/40
-            block_size_decimal = Decimal(str(block_size))
-            snake1.modify_positions(norm_block_size,block_size_decimal)
-            snake2.modify_positions(norm_block_size,block_size_decimal)
-            food1.randomize_position()
-            food2.randomize_position()
-            invinc_food.randomize_position()
-        win = pygame.display.set_mode((width, height), RESIZABLE)
-        pygame.event.post(event)
-#介绍 
-def intro(start_button):
-    font = pygame.font.SysFont("simsun", 36,False,False)
-    intro_text = font.render("Welcome to Snake Game", True, BLACK)
-    win.blit(intro_text, (width/2-175, 100))
-    rules_text1 = font.render("游戏规则: 每条蛇开局有五秒钟的无敌时间", True, BLACK)
-    win.blit(rules_text1, (width/2-350, 150))
-    rules_text2 = font.render("吃红色食物可以获得随机buff", True, BLACK)
-    win.blit(rules_text2, (width/2-200, 200))
-    rules_text3 = font.render("金色食物是无敌五秒，不可出界", True, BLACK)
-    win.blit(rules_text3, (width/2-225, 250))
-    rules_text4 = font.render("一条蛇蛇头触碰另一条蛇的身体会扣血", True, BLACK)
-    win.blit(rules_text4, (width/2-250, 300))
-    rules_text5 = font.render("吃到三个红色食物或将敌人血量扣光算赢", True, BLACK)
-    win.blit(rules_text5, (width/2-350, 350))
-    start_button.draw(win)
-    
-# 主函数
-def main():
-    
-    clock = pygame.time.Clock()
-    #检测是不是ikun
-    kun1,kun2=False,False
-    if user1 == "ikun" or user1 == "kun":
-        kun1=True
-    if user2 == "ikun" or user2 == "kun":
-        kun2=True
-    #设置游戏角色和道具
-    global full_width,is_fullscreen,block_size,fps
-    snake_speed = 100
-    snake1 = Snake([((width-full_width)/2+(29*block_size),height/2)],color1,kun1)
-    snake2 = Snake([((width-full_width)/2+(9*block_size),height/2)],color2,kun2)
-    food1 = Food()
-    food2 = Food()
-    invinci_food = Food(GOLD)
-    button = Button(width/2-50,height/2+100,100,50,(169,169,169),(105,105,105),"Try Again")
-    start_button = Button(width/2-50, height/2+100, 200, 50, (169,169,169), (105,105,105), "Press to Start")
-    # 设置游戏胜利条件
-    win_score = 6
-    #回合胜利数
-    global snake1_win_count 
-    global snake2_win_count
-    #游戏锁定
-    global game_lock
-    #当前时间
-    global now
-    #停止介绍
-    global stop_intro
-    now = pygame.time.get_ticks()-101
-    #添加bgm
-    mixer.music.load('灰澈-森林-副本.mp3')
-    mixer.music.play(-1)
-    stop_intro = False
-    if is_fullscreen:
-        food1.randomize_position()
-        food2.randomize_position()
-        invinci_food.randomize_position()
-    while True:
-        
-        on_resize(snake1,snake2,food1,food2,invinci_food)
-        
-        
-        win.fill(WHITE)
-        if stop_intro is False:
-            game_lock = True
-            intro(start_button)
-        #控制时间
-        if pygame.time.get_ticks() - now > snake_speed:
-            now = pygame.time.get_ticks()
-            snake1.move()
-            snake2.move()
-            snakes_hit(snake1, snake2)
-            
-        #吃食物机制
-        if snake1.get_head_position() == food1.position:
-            snake1.eat(food1)
-        if snake1.get_head_position() == food2.position:
-            snake1.eat(food2)
-        if snake2.get_head_position() == food1.position:
-            snake2.eat(food1)
-        if snake2.get_head_position() == food2.position:
-            snake2.eat(food2)
-        if snake1.get_head_position() == invinci_food.position and snake2.is_invincibe is False:
-            snake1.invincible_time()
-            snake1.color = GOLD
-            invinci_food.randomize_position()
-        if snake2.get_head_position() == invinci_food.position and snake1.is_invincibe is False:
-            snake2.invincible_time()
-            snake2.color = GOLD
-            invinci_food.randomize_position()
-        
-        fail_screen(snake1,snake2,button)
-        #绘制图形
-        snake1.draw(win)
-        snake2.draw(win)
-        food1.draw(win)
-        food2.draw(win)
-        #等待5秒显示
-        if snake1.is_invincibe is False and snake2.is_invincibe is False:
-            invinci_food.draw(win)
-        #操作设置
-        handle_key(snake1, snake2, button,start_button)
+            if game_lock is False:
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_UP:
+                        snake1.turn((0, -1))
+                    elif event.key == pygame.K_DOWN:
+                        snake1.turn((0, 1))
+                    elif event.key == pygame.K_LEFT:
+                        snake1.turn((-1, 0))
+                    elif event.key == pygame.K_RIGHT:
+                        snake1.turn((1, 0))
+                    if event.key == pygame.K_w:
+                        snake2.turn((0, -1))
+                    elif event.key == pygame.K_s:
+                        snake2.turn((0, 1))
+                    elif event.key == pygame.K_a:
+                        snake2.turn((-1, 0))
+                    elif event.key == pygame.K_d:
+                        snake2.turn((1, 0))
+                    if event.key == pygame.K_SPACE:
+                        snake2.skill()
+            #按钮事件
+            if game_lock:
+                
+                if (event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == hello_button):
+                    stop_intro = True
+                    game_lock = False
+                    snake1.reset([((width-full_width)/2+float((Decimal(29)*block_size_decimal)),height/2)])
+                    snake2.reset([((width-full_width)/2+float((Decimal(9)*block_size_decimal)),height/2)])
+                    snake1.is_win = False
+                    snake2.is_win = False
+                    snake1.is_fail = False
+                    snake2.is_fail = False
+                    hello_button.hide()
+                    
+            manager.process_events(event)
+        manager.update(time_delta)
+        manager.draw_ui(win)
         #道具特殊文本
         pygame.font.init()
         font = pygame.font.SysFont("simsun", 36,True,False)
@@ -552,36 +605,40 @@ def main():
         win.blit(score_text, (width/2+width/4, 10))
         score_text = font.render(f"{user2} Score: {snake2.score}", True, BLACK)
         win.blit(score_text, (10, 10))
-        heart_text = font.render(f"{user1} HP: {snake1.heart}", True, BLACK)
-        win.blit(heart_text, (width/2+width/4, 50))
-        heart_text = font.render(f"{user2} HP: {snake2.heart}", True, BLACK)
+        heart_text = font.render(f"HP: {snake1.heart}", True, BLACK)
+        win.blit(heart_text, (width/2+width/4-70, 50))
+        heart_text = font.render(f"HP: {snake2.heart}", True, BLACK)
         win.blit(heart_text, (10, 50))
         win_text = font.render(f"{snake2_win_count} VS {snake1_win_count}", True, BLACK)
         win.blit(win_text, (width/2-width/16, 10))
-        shield_text = font.render(f"{user1} Shield: {snake1.shield}", True, BLACK)
+        shield_text = font.render(f"Shield: {snake1.shield}", True, BLACK)
         win.blit(shield_text, (width/2+width/4, 90))
-        shield_text = font.render(f"{user2} Shield: {snake2.shield}", True, BLACK)
+        shield_text = font.render(f"Shield: {snake2.shield}", True, BLACK)
         win.blit(shield_text, (10, 90))
 
         #检测输赢机制    
         if snake1.score >= win_score and snake2.is_win is False:  # 假设蛇1的分数达到 10 时为胜利条件
-            win_screen(snake1, user1,button)
             snake1.is_win=True
+            win_screen(snake1, user1,hello_button)
+            
             game_lock = True
             
         if snake2.score >= win_score and snake1.is_win is False:  # 假设蛇2的分数达到 10 时为胜利条件
-            win_screen(snake2,user2,button)
             snake2.is_win=True
+            win_screen(snake2,user2,hello_button)
+            
             game_lock = True
             
         if snake1.check_position() is False and snake1.is_win is False and snake2.is_win is False and snake2.is_fail is False:
-            fail_screen(snake1,snake2,button)
             snake1.is_fail = True
+            fail_screen(snake1,snake2,hello_button)
+            
             game_lock = True
         
         if snake2.check_position() is False and snake1.is_win is False and snake2.is_win is False and snake1.is_fail is False:
-            fail_screen(snake1,snake2,button)
             snake2.is_fail = True
+            fail_screen(snake1,snake2,hello_button)
+            
             game_lock = True
         #帧数        
         pygame.display.update()
