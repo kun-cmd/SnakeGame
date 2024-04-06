@@ -23,11 +23,7 @@ class HappySprite:
         self.rect.move_ip(0,5)
         
         
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    print(1)
-            
+        
 pygame.display.set_caption('Quick Start')
 window_surface = pygame.display.set_mode((800, 600))
 
