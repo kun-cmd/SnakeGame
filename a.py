@@ -52,7 +52,13 @@ while is_running:
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
             if event.ui_element == hello_button:
                 print("Hello")
-        
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                pygame.time.set_timer(pygame.USEREVENT, 1000)
+                
+        if event.type == pygame.USEREVENT:
+            print(1)
+            pygame.event.clear(pygame.USEREVENT)
         manager.process_events(event)
     happy_sprite.update(time_delta)
     manager.update(time_delta)
