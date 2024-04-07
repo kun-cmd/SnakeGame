@@ -3,7 +3,7 @@ from setting import *
 # 蛇的类
 class Snake(object):
     
-    def __init__(self,positions,color,is_ikun=False):
+    def __init__(self,positions,color,ACC_EVENT,is_ikun=False,normal_speed=100):
         
         self.length = INIT_LENGTH
         self.positions = positions
@@ -22,7 +22,12 @@ class Snake(object):
         self.shield_broke = False
         self.is_deduct = False
         self.is_ikun = is_ikun
+        #计时器
+        self.ACC_EVENT = ACC_EVENT
         self.speed = 100
+        self.acc = False
+        self.normal_speed = normal_speed
+        self.skill_points = 0
         self.invincible_time()
     def get_speed(self):
         return self.speed
@@ -49,12 +54,20 @@ class Snake(object):
     #吃机制
     def eat(self,food):
         self.length += 1
+        self.skill_points+=1
         self.score += 1
         buff=random.choice([self.add_shield,self.add_HP])
         buff()
         food.randomize_position()
         if self.is_ikun:
             KUN_SOUND.play()
+    #加速机制
+    def accelerate(self):
+        self.acc = True
+        self.speed = self.speed -30
+        self.skill_points -= 1
+        pygame.time.set_timer(self.ACC_EVENT, 5000)
+        
     #扣血机制
     def HP_deduction(self):
         if self.is_invincibe is False:
@@ -66,6 +79,8 @@ class Snake(object):
                 pygame.time.set_timer(SHIELD_BROKEN, 3000)
             elif self.heart > 1:
                 self.heart -= 1
+                #扣长度
+                self.length -= 1
                 self.color = RED
                 PUNCH_SOUND.play()
                 self.is_deduct = True
@@ -74,7 +89,7 @@ class Snake(object):
                 PUNCH_SOUND.play()
                 self.heart = 0
                 self.is_fail = True
-                
+    
     def move(self):
         
         cur = self.get_head_position()
@@ -88,8 +103,10 @@ class Snake(object):
         #if new in self.positions:
             #self.reset()
         self.positions.insert(0, new)
-        if len(self.positions) > self.length:
+        
+        while len(self.positions) > self.length:
             self.positions.pop()
+       
     #无敌机制   
     def invincible_time(self):
         self.is_invincibe = True
