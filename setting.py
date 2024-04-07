@@ -3,6 +3,8 @@ import pygame_gui
 from pygame.locals import *
 from pygame import mixer
 import random
+import sys
+from pygame_gui.core import ObjectID
 from decimal import Decimal
 mixer.init()
 # 定义颜色
@@ -21,6 +23,9 @@ ADD_SHIELD = pygame.USEREVENT+1
 ADD_HP = pygame.USEREVENT+2
 HP_DEDUCT = pygame.USEREVENT+3
 SHIELD_BROKEN = pygame.USEREVENT+4
+ACC_EVENT1 =  pygame.USEREVENT+5
+ACC_EVENT2 =  pygame.USEREVENT+6
+MOVE_EVENT =  pygame.USEREVENT+7
 #帧率
 FPS = 60
 width, height = 800, 600
@@ -29,3 +34,4 @@ block_size_decimal = Decimal(str(block_size))
 # 定义蛇的属性
 INIT_LENGTH = 5
 full_width = 800
+NORMAL_SPEED = 100
