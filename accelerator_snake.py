@@ -1,15 +1,15 @@
 from snake import Snake
 from setting import *
 class Acc_snake(Snake):
-    def __init__(self, positions, color, is_ikun=False,normal_speed=100):
-        super().__init__(positions, color, is_ikun)
+    def __init__(self, positions, color,ACC_EVENT, is_ikun=False):
+        super().__init__(positions, color, ACC_EVENT, is_ikun)
         
         self.max_stamina = 100.0
         self.current_stamina = 100.0
         self.stam_recharge_tick = 0.05
         self.stam_recharge_acc = 0.0
         self.acc = False
-        self.normal_speed = normal_speed
+        
         self.rect = pygame.Rect(self.get_head_position(),(block_size,block_size))
     def move(self):
         
@@ -21,7 +21,7 @@ class Acc_snake(Snake):
         y = float(Decimal(str(cur[1])) +(y*block_size_decimal))
         new = (x, y)
         if self.acc:
-            self.current_stamina -= 0.4
+            self.current_stamina -= 1
             self.current_stamina = max(self.current_stamina, 0)
         
         # if len(self.positions) > 2 and new in self.positions[2:]:
@@ -53,5 +53,5 @@ class Acc_snake(Snake):
             self.speed = self.speed -30
             print(self.speed)
         else:
-            self.speed = self.normal_speed
+            self.speed = NORMAL_SPEED
             self.acc = False
