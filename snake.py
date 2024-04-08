@@ -3,7 +3,7 @@ from setting import *
 # 蛇的类
 class Snake(object):
     
-    def __init__(self,positions,color,ACC_EVENT,is_ikun=False,normal_speed=100):
+    def __init__(self,positions,color,ACC_EVENT,SLOW_EVENT,is_ikun=False,normal_speed=100):
         
         self.length = INIT_LENGTH
         self.positions = positions
@@ -24,23 +24,30 @@ class Snake(object):
         self.is_ikun = is_ikun
         #计时器
         self.ACC_EVENT = ACC_EVENT
+        self.SLOW_EVENT = SLOW_EVENT
         self.speed = 100
         self.acc = False
+        self.slow_enemy = False
+        self.is_invincibe = False
         self.normal_speed = normal_speed
-        self.skill_points = 0
+        self.skill_points = 3
+        #施法半径
+        self.radius = 100
         self.invincible_time()
     def get_speed(self):
         return self.speed
     def add_shield(self):
-        self.is_shielded = True
+        
         self.shield+=1
         self.color = (0,255,255)
         pygame.time.set_timer(ADD_SHIELD, 1000)
+        self.is_shielded = True
     def add_HP(self):
-        self.is_HP = True
+        
         self.heart+=1
         self.color = (0,255,0)
         pygame.time.set_timer(ADD_HP, 1000)
+        self.is_HP = True
     def  get_health_percentage(self) -> float:
         return self.heart/self.max_heart
     def get_head_position(self):
@@ -63,32 +70,51 @@ class Snake(object):
             KUN_SOUND.play()
     #加速机制
     def accelerate(self):
-        self.acc = True
-        self.speed = self.speed -30
-        self.skill_points -= 1
-        pygame.time.set_timer(self.ACC_EVENT, 5000)
-        
+        if self.skill_points>=1:
+            self.speed = self.speed -30
+            self.skill_points -= 1
+            self.skill_points = max(self.skill_points, 0)
+            pygame.time.set_timer(self.ACC_EVENT, 5000)
+            self.acc = True
+        else:
+            print('没有技能点')
+    def show_scope(self,surface):
+        pygame.draw.circle(surface,(255,0,0),(self.get_head_position()),self.radius)
+    #范围减速
+    def speed_cut(self,enemy):
+        if self.skill_points>=2:
+            self.skill_points -= 2
+            self.skill_points = max(self.skill_points, 0)
+            distance = math.sqrt((self.get_head_position()[0] - enemy.get_head_position()[0])**2 + (self.get_head_position()[1] - enemy.get_head_position()[1])**2)
+            if distance <= self.radius:
+                enemy.speed += 40
+                pygame.time.set_timer(self.SLOW_EVENT, 5000)
+                self.slow_enemy = True
+            else:
+                print('没打到')
+        else:
+            print('没有技能点')
     #扣血机制
     def HP_deduction(self):
-        if self.is_invincibe is False:
-            if self.shield>=1:
-                self.shield-=1
-                self.color = (135,206,235)
-                SHIELD_SOUND.play()
-                self.shield_broke = True
-                pygame.time.set_timer(SHIELD_BROKEN, 3000)
-            elif self.heart > 1:
-                self.heart -= 1
-                #扣长度
-                self.length -= 1
-                self.color = RED
-                PUNCH_SOUND.play()
-                self.is_deduct = True
-                pygame.time.set_timer(HP_DEDUCT, 500)
-            else:
-                PUNCH_SOUND.play()
-                self.heart = 0
-                self.is_fail = True
+    
+        if self.shield>=1:
+            self.shield-=1
+            self.color = (135,206,235)
+            SHIELD_SOUND.play()
+            pygame.time.set_timer(SHIELD_BROKEN, 3000)
+            self.shield_broke = True
+        elif self.heart > 1:
+            self.heart -= 1
+            #扣长度
+            self.length -= 1
+            self.color = RED
+            PUNCH_SOUND.play()
+            pygame.time.set_timer(HP_DEDUCT, 500)
+            self.is_deduct = True
+        else:
+            PUNCH_SOUND.play()
+            self.heart = 0
+            self.is_fail = True
     
     def move(self):
         
@@ -109,9 +135,14 @@ class Snake(object):
        
     #无敌机制   
     def invincible_time(self):
-        self.is_invincibe = True
-        
-        pygame.time.set_timer(INVINCIBLE_TIME, 5000)
+        if self.skill_points>=3:
+            self.skill_points-=3
+            self.skill_points = max(self.skill_points, 0)
+            self.color = GOLD
+            pygame.time.set_timer(INVINCIBLE_TIME, 3000)
+            self.is_invincibe = True
+        else:
+            print('没有技能点')
     #获取身体位置
     def get_body_positions(self):
         body_positions = []
@@ -128,10 +159,11 @@ class Snake(object):
         return True
     #检查是否撞到敌人
     def check_hit(self,enenmy):
-        if self.get_head_position() == enenmy.get_head_position() and self.is_win is False and enenmy.is_win is False:
-            self.HP_deduction()
-        if self.get_head_position() in enenmy.get_body_positions() and self.is_win is False and enenmy.is_win is False and enenmy.is_fail is False:
-            self.HP_deduction()
+        if self.is_invincibe is False and enenmy.is_invincibe is False:
+            if self.get_head_position() == enenmy.get_head_position() and self.is_win is False and enenmy.is_win is False:
+                self.HP_deduction()
+            if self.get_head_position() in enenmy.get_body_positions() and self.is_win is False and enenmy.is_win is False and enenmy.is_fail is False:
+                self.HP_deduction()
     def check_eat(self,food):
         if self.get_head_position() == food.position:
             self.eat(food)
@@ -146,6 +178,13 @@ class Snake(object):
         self.is_HP = False
         self.is_shielded = False
         self.is_deduct = False
+        self.speed = 100
+        self.acc = False
+        self.slow_enemy = False
+        self.is_invincibe = False
+        self.skill_points = 3
+        #施法半径
+        self.radius = 100
         self.invincible_time()
     
     def modify_positions(self,norm_block_size,full_block_size,is_fullscreen):
