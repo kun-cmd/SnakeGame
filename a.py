@@ -57,7 +57,6 @@ while is_running:
                 pygame.time.set_timer(pygame.USEREVENT, 1000)
                 
         if event.type == pygame.USEREVENT:
-            print(1)
             pygame.event.clear(pygame.USEREVENT)
         manager.process_events(event)
     happy_sprite.update(time_delta)
