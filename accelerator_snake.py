@@ -1,8 +1,8 @@
 from snake import Snake
 from setting import *
 class Acc_snake(Snake):
-    def __init__(self, positions, color,ACC_EVENT, is_ikun=False):
-        super().__init__(positions, color, ACC_EVENT, is_ikun)
+    def __init__(self, positions, color,ACC_EVENT,SLOW_EVENT, is_ikun=False):
+        super().__init__(positions, color, ACC_EVENT,SLOW_EVENT, is_ikun)
         
         self.max_stamina = 100.0
         self.current_stamina = 100.0
